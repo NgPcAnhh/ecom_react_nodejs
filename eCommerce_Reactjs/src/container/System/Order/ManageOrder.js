@@ -21,20 +21,27 @@ const ManageOrder = () => {
     const [numberPage, setnumberPage] = useState('')
     const { data: dataStatusOrder } = useFetchAllcode('STATUS-ORDER');
     const [StatusId, setStatusId] = useState('ALL')
+    const [filterQuantity, setFilterQuantity] = useState(false)
     useEffect(() => {
         loadOrderData('ALL')
 
     }, [])
-    let loadOrderData = (statusId) => {
+    let loadOrderData = (statusId, sortQuantity = false) => {
         try {
             let fetchData = async () => {
-                let arrData = await getAllOrder({
-
+                let params = {
                     limit: PAGINATION.pagerow,
-                    offset: 0,
-                    statusId: statusId
-
-                })
+                    offset: 0
+                }
+                
+                if (sortQuantity) {
+                    params.sort = 'quantity_gt_10'
+                    params.statusId = 'S3' // Chỉ lấy đơn hàng có trạng thái chờ xác nhận (S3)
+                } else {
+                    params.statusId = statusId
+                }
+                
+                let arrData = await getAllOrder(params)
                 if (arrData && arrData.errCode === 0) {
                     setdataOrder(arrData.data)
                     setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
@@ -45,22 +52,37 @@ const ManageOrder = () => {
             console.log(error)
         }
     }
+    
     let handleOnchangeStatus = (event) => {
-
-        loadOrderData(event.target.value)
-        setStatusId(event.target.value)
-
+        const value = event.target.value;
+        if (value === 'QUANTITY_GT_10') {
+            setFilterQuantity(true)
+            setStatusId('S3') // Cập nhật state để thể hiện đang lọc trạng thái S3
+            loadOrderData('S3', true) // Truyền S3 và true để lọc theo cả trạng thái và số lượng
+        } else {
+            setFilterQuantity(false)
+            setStatusId(value)
+            loadOrderData(value, false)
+        }
     }
+    
     let handleChangePage = async (number) => {
         setnumberPage(number.selected)
-        let arrData = await getAllOrder({
+        let params = {
             limit: PAGINATION.pagerow,
-            offset: number.selected * PAGINATION.pagerow,
-            statusId: StatusId
-        })
+            offset: number.selected * PAGINATION.pagerow
+        }
+        
+        if (filterQuantity) {
+            params.sort = 'quantity_gt_10'
+            params.statusId = 'S3' // Đảm bảo đúng trạng thái khi phân trang
+        } else {
+            params.statusId = StatusId
+        }
+        
+        let arrData = await getAllOrder(params)
         if (arrData && arrData.errCode === 0) {
             setdataOrder(arrData.data)
-
         }
     }
     let handleOnClickExport = async () => {
@@ -85,16 +107,21 @@ const ManageOrder = () => {
                     <i className="fas fa-table me-1" />
                     Danh sách đơn đặt hàng
                 </div>
-                <select onChange={(event) => handleOnchangeStatus(event)} class="form-select col-3 ml-3 mt-3">
-                    <option value={'ALL'} selected>Trạng thái đơn hàng</option>
+                <select
+                    onChange={handleOnchangeStatus}
+                    className="form-select col-3 ml-3 mt-3"
+                    value={filterQuantity ? 'QUANTITY_GT_10' : StatusId}
+                >
+                    <option value={'ALL'}>Trạng thái đơn hàng</option>
                     {
                         dataStatusOrder && dataStatusOrder.length > 0 &&
                         dataStatusOrder.map((item, index) => {
                             return (
-                                <option value={item.code}>{item.value}</option>
+                                <option value={item.code} key={item.code}>{item.value}</option>
                             )
                         })
                     }
+                    <option value="QUANTITY_GT_10">Đơn hàng có SL &gt; 10</option>
                 </select>
                 <div className="card-body">
                     <div className='row'>
@@ -116,6 +143,7 @@ const ManageOrder = () => {
                                     <th>Hình thức</th>
                                     <th>Trạng thái</th>
                                     <th>Shipper</th>
+                                    <th>SL</th>
                                     <th>Thao tác</th>
                                 </tr>
                             </thead>
@@ -135,6 +163,7 @@ const ManageOrder = () => {
                                                 <td>{item.isPaymentOnlien == 0 ? 'Thanh toán tiền mặt' : 'Thanh toán online'}</td>
                                                 <td>{item.statusOrderData.value}</td>
                                                 <td>{item.shipperData && item.shipperData.firstName + " " + item.shipperData.lastName + " - " + item.shipperData.phonenumber}</td>
+                                                <td>{item.quantity}</td>
                                                 <td>
                                                     <Link to={`/admin/order-detail/${item.id}`}>Xem chi tiết</Link>
 

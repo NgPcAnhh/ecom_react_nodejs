@@ -1,0 +1,48 @@
+.confirm-large-order-modal {
+    .verification-code {
+        text-align: center;
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        
+        span {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 5px;
+            color: #333;
+            font-family: monospace;
+        }
+    }
+    
+    .input-container {
+        margin-top: 20px;
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input {
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 3px;
+            font-family: monospace;
+        }
+    }
+    
+    .confirmation-message {
+        color: #dc3545;
+        font-weight: 500;
+    }
+    
+    .is-valid {
+        border-color: #28a745;
+        
+        &:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+    }
+}

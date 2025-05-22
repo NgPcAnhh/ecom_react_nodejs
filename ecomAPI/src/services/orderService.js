@@ -83,48 +83,64 @@ let createNewOrder = (data) => {
 let getAllOrders = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-
             let objectFilter = {
                 include: [
                     { model: db.TypeShip, as: 'typeShipData' },
                     { model: db.Voucher, as: 'voucherData' },
                     { model: db.Allcode, as: 'statusOrderData' },
-
                 ],
                 order: [['createdAt', 'DESC']],
                 raw: true,
                 nest: true
             }
+            
             if (data.limit && data.offset) {
                 objectFilter.limit = +data.limit
                 objectFilter.offset = +data.offset
             }
-            if (data.statusId && data.statusId !== 'ALL') objectFilter.where = { statusId: data.statusId }
+            
+            // Luôn áp dụng filter theo statusId (bất kể có sort hay không)
+            if (data.statusId && data.statusId !== 'ALL') {
+                objectFilter.where = { statusId: data.statusId }
+            }
+            
+            // Lấy đơn hàng theo filter hiện tại
             let res = await db.OrderProduct.findAndCountAll(objectFilter)
+            
+            // Tính tổng số lượng cho mỗi đơn hàng và áp dụng lọc nếu cần
+            let processedRows = []
             for (let i = 0; i < res.rows.length; i++) {
                 let addressUser = await db.AddressUser.findOne({ where: { id: res.rows[i].addressUserId } })
                 let shipper = await db.User.findOne({ where: { id: res.rows[i].shipperId } })
-
+                
                 if (addressUser) {
                     let user = await db.User.findOne({
                         where: {
                             id: addressUser.userId
                         }
                     })
-
                     res.rows[i].userData = user
                     res.rows[i].addressUser = addressUser
                     res.rows[i].shipperData = shipper
                 }
-
+                
+                // Tính tổng số lượng sản phẩm cho đơn hàng này
+                let orderDetails = await db.OrderDetail.findAll({ where: { orderId: res.rows[i].id } })
+                let totalQuantity = orderDetails.reduce((sum, od) => sum + (od.quantity || 0), 0)
+                res.rows[i].quantity = totalQuantity
+                
+                // Nếu có yêu cầu lọc theo số lượng, chỉ lấy đơn hàng có số lượng > 10
+                // Nếu không lọc số lượng, lấy tất cả đơn hàng
+                if (!data.sort || data.sort !== 'quantity_gt_10' || totalQuantity > 10) {
+                    processedRows.push(res.rows[i])
+                }
             }
+            
             resolve({
                 errCode: 0,
-                data: res.rows,
-                count: res.count
+                data: processedRows,
+                count: processedRows.length
             })
-
-
         } catch (error) {
             reject(error)
         }

@@ -10,6 +10,9 @@ import { Link, useHistory, useLocation } from 'react-router-dom';
 import AddressUsersModal from './AdressUserModal';
 import { toast } from 'react-toastify';
 import CommonUtils from '../../utils/CommonUtils';
+import ConfirmOrderModal from './ConfirmOrderModal';
+import ConfirmLargeOrderModal from './ConfirmLargeOrderModal';
+
 function ShopCartPage(props) {
     const dispatch = useDispatch()
     let history = useHistory();
@@ -22,6 +25,8 @@ function ShopCartPage(props) {
     let dataCart = useSelector(state => state.shopcart.listCartItem)
     let dataVoucher = useSelector(state => state.shopcart.dataVoucher)
     const [priceShip, setpriceShip] = useState(0)
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isLargeOrderConfirmModalOpen, setIsLargeOrderConfirmModalOpen] = useState(false);
 
     // Lấy query params
     const getQueryParams = () => {
@@ -122,7 +127,31 @@ function ShopCartPage(props) {
             toast.error("Vui lòng chọn sản phẩm để thanh toán");
             return;
         }
-        // Truyền danh sách id sản phẩm được tích qua query string
+        
+        // Kiểm tra tổng số lượng sản phẩm đã chọn
+        if (totalSelectedCount > 10) {
+            // Hiển thị modal xác nhận đặc biệt cho đơn hàng lớn
+            setIsLargeOrderConfirmModalOpen(true);
+        } else {
+            // Hiển thị modal xác nhận thông thường
+            setIsConfirmModalOpen(true);
+        }
+    }
+    
+    // Xử lý khi người dùng xác nhận đơn hàng thông thường
+    const handleConfirmOrder = async () => {
+        setIsConfirmModalOpen(false);
+        proceedToCheckout();
+    }
+    
+    // Xử lý khi người dùng xác nhận đơn hàng lớn
+    const handleConfirmLargeOrder = async () => {
+        setIsLargeOrderConfirmModalOpen(false);
+        proceedToCheckout();
+    }
+    
+    // Hàm chung để tiến hành thanh toán
+    const proceedToCheckout = async () => {
         const selectedParam = selectedIds.join(',');
         let res = await getAllAddressUserByUserIdService(user.id)
         if (res && res.errCode === 0 && res.data.length > 0) {
@@ -131,6 +160,7 @@ function ShopCartPage(props) {
             setisOpenModalAddressUser(true)
         }
     }
+    
     let totalPriceDiscount = (price, discount) => {
 
         if (discount.voucherData.typeVoucherOfVoucherData.typeVoucher === "percent") {
@@ -290,6 +320,18 @@ function ShopCartPage(props) {
                     </div>
                 </div>
             </div>
+            <ConfirmOrderModal 
+                isOpen={isConfirmModalOpen} 
+                toggle={() => setIsConfirmModalOpen(!isConfirmModalOpen)} 
+                onConfirm={handleConfirmOrder} 
+            />
+            
+            <ConfirmLargeOrderModal 
+                isOpen={isLargeOrderConfirmModalOpen} 
+                toggle={() => setIsLargeOrderConfirmModalOpen(!isLargeOrderConfirmModalOpen)} 
+                onConfirm={handleConfirmLargeOrder} 
+            />
+            
             <VoucherModal closeModalFromVoucherItem={closeModalFromVoucherItem} price={price + (+priceShip)} isOpenModal={isOpenModal}
                 closeModal={closeModal} id={user && user.id} />
             <AddressUsersModal sendDataFromModalAddress={sendDataFromModalAddress} isOpenModal={isOpenModalAddressUser} closeModaAddressUser={closeModaAddressUser} />

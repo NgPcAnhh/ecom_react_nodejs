@@ -14,6 +14,7 @@ let createNewOrder = async (req, res) => {
 }
 let getAllOrders = async (req, res) => {
     try {
+        // Truyền toàn bộ req.query (bao gồm sort) xuống service
         let data = await orderService.getAllOrders(req.query);
         return res.status(200).json(data);
     } catch (error) {
