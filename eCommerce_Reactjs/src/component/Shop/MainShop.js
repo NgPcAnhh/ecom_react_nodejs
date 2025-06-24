@@ -41,7 +41,7 @@ function MainShop({ categoryId, brandId, myRef, minPrice, maxPrice }) {
                 offset: offset,
                 categoryId: categoryId,
                 brandId: brandId,
-                 keyword:keyword
+                keyword:keyword
             })
             if (arrData && arrData.errCode === 0) {
                 setdataProduct(arrData.data)

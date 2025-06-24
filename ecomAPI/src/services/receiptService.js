@@ -120,6 +120,9 @@ let getAllReceipt = (data) => {
                 objectFilter.offset = +data.offset
             }
 
+            // Thêm dòng này để sắp xếp theo createdAt giảm dần (mới nhất trước)
+            objectFilter.order = [['createdAt', 'DESC']]
+
             //  if(data.keyword !=='') objectFilter.where = {...objectFilter.where, name: {[Op.substring]: data.keyword  } }
             let res = await db.Receipt.findAndCountAll(objectFilter)
             for (let i = 0; i < res.rows.length; i++) {

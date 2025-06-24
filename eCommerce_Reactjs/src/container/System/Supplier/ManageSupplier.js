@@ -40,7 +40,7 @@ const ManageSupplier = () => {
 
         })
         if (arrData && arrData.errCode === 0) {
-            setdataSupplier(arrData.data)
+            setdataSupplier(arrData.data.reverse()) // Đảo ngược mảng dữ liệu
             setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
         }
     }
